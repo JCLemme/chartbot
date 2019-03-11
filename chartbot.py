@@ -11,7 +11,17 @@ import spotipy.util as util
 from fuzzywuzzy import fuzz
 from spotipy.oauth2 import SpotifyClientCredentials
 
-def strCompareBi(str1, str2):
+def inputYesNo(prompt):
+    result = False
+    
+    answer = raw_input(prompt + " [y/n] ")
+    acceptedYes = ["Y", "YE", "YES"]
+    
+    if(answer.upper() in acceptedYes): result = True
+    
+    return result;
+    
+def stringCompareWithin(str1, str2):
     if(len(str1) > len(str2)):
         if str2 not in str1:
             return 0
@@ -55,8 +65,8 @@ def lookupSong(spotify, title, artist):
             
             # Sometimes artist order is broken, so look at every artist Spotify gives us
             for qArtist in qresult['tracks']['items'][i]['artists']:
-                if (strCompareBi(query[0].upper(), qTitle.upper()) 
-                and strCompareBi(query[1].upper(), qArtist["name"].upper())):
+                if (stringCompareWithin(query[0].upper(), qTitle.upper()) 
+                and stringCompareWithin(query[1].upper(), qArtist["name"].upper())):
                     print("  Found direct match (title \"" + qTitle + "\", artist \"" + qArtist["name"] + "\")")
                     found["id"] = qresult['tracks']['items'][i]['id']
                     return found
@@ -99,7 +109,7 @@ def lookupSong(spotify, title, artist):
 
 
 
-# All the charts we're gonna support (listed in order of display name, chart URL name, short name)
+# All the charts we're gonna support (listed in order of display name, chart URL, short name)
 chartsData = []
 chartsData.append(['Hot 100', 'hot-100', 'Hot 100'])
 chartsData.append(['Billboard 200', 'billboard-200', 'Bill 200'])
@@ -128,7 +138,7 @@ print(" ")
 srcUser = config.username
 
 if(srcUser == ""):
-    raw_input("Enter your Spotify username: ")
+    srcUser = raw_input("Enter your Spotify username: ")
     
 print("Now logging you in. Follow the instructions below...")
                                                  
@@ -224,20 +234,17 @@ for chartTrack in tracksToFind:
     print(" ")
     
 print('Found ' + str(len(tracksToAdd)) + ' of ' + str(len(tracksToFind)) + ' tracks.')
-print('Not found:')
 
-for t in tracksRejected:
-    print(t)
+if(len(tracksRejected) > 0):
+    print('Not found:')
+
+    for t in tracksRejected:
+        print(t)
 
 print(' ')
 
 # Add tracks to the playlist
-buildPlaylist = "y"
-inPlaylist = raw_input("Make this playlist [y/n]? ")
-if(inPlaylist != ""): buildPlaylist = inPlaylist
-acceptedYes = ["Y", "YE", "YES"]
-
-if(buildPlaylist.upper() in acceptedYes):
+if(inputYesNo("Build this playlist?")):
     newPlaylist = spotify.user_playlist_create(srcUser, name=srcPlaylist, public=False)
     spotify.user_playlist_add_tracks(srcUser, newPlaylist['id'], tracksToAdd)
 
